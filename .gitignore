@@ -208,3 +208,6 @@ __marimo__/
 data/test_transaction.csv
 data/train_transaction.csv
 train/models/base_rf.pkl
+data/*.csv
+train/models/*.pkl
+*.ipynb_checkpoints/
