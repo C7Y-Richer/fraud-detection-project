@@ -1,0 +1,458 @@
+
+Please select an option:
+1. Train new model
+2. Load existing models
+
+Starting to train new models...
+Training and evaluating models using 5-fold cross-validation...
+Building base models...
+Building meta models...
+
+Training fold 1/5
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Number of samples in resampled validation set: 94487
+Training rf model...
+
+Model evaluation results:
+ROC AUC: 0.9427
+PR AUC: 0.6978
+
+Classification Report:
+Category 0:
+  Precision: 0.9825
+  Recall: 0.9964
+  F1-score: 0.9894
+Category 1:
+  Precision: 0.8366
+  Recall: 0.5097
+  F1-score: 0.6335
+rf Validation AUC: 0.9427
+Training lgb model...
+
+Model evaluation results:
+ROC AUC: 0.9506
+PR AUC: 0.7028
+
+Classification Report:
+Category 0:
+  Precision: 0.9924
+  Recall: 0.9517
+  F1-score: 0.9716
+Category 1:
+  Precision: 0.3751
+  Recall: 0.7998
+  F1-score: 0.5107
+lgb Validation AUC: 0.9506
+Training xgb model...
+
+Model evaluation results:
+ROC AUC: 0.9585
+PR AUC: 0.7638
+
+Classification Report:
+Category 0:
+  Precision: 0.9916
+  Recall: 0.9801
+  F1-score: 0.9858
+Category 1:
+  Precision: 0.5835
+  Recall: 0.7701
+  F1-score: 0.6640
+xgb Validation AUC: 0.9585
+Training catboost model...
+0:	total: 73.7ms	remaining: 2m 27s
+500:	total: 10.7s	remaining: 32s
+1000:	total: 21.5s	remaining: 21.5s
+1500:	total: 32.4s	remaining: 10.8s
+1999:	total: 43.2s	remaining: 0us
+
+Model evaluation results:
+ROC AUC: 0.9481
+PR AUC: 0.6913
+
+Classification Report:
+Category 0:
+  Precision: 0.9923
+  Recall: 0.9513
+  F1-score: 0.9713
+Category 1:
+  Precision: 0.3720
+  Recall: 0.7961
+  F1-score: 0.5070
+catboost Validation AUC: 0.9481
+
+Training fold 2/5
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Number of samples in resampled validation set: 94487
+Training rf model...
+
+Model evaluation results:
+ROC AUC: 0.9409
+PR AUC: 0.7022
+
+Classification Report:
+Category 0:
+  Precision: 0.9827
+  Recall: 0.9968
+  F1-score: 0.9897
+Category 1:
+  Precision: 0.8523
+  Recall: 0.5148
+  F1-score: 0.6419
+rf Validation AUC: 0.9409
+Training lgb model...
+
+Model evaluation results:
+ROC AUC: 0.9497
+PR AUC: 0.7022
+
+Classification Report:
+Category 0:
+  Precision: 0.9923
+  Recall: 0.9509
+  F1-score: 0.9712
+Category 1:
+  Precision: 0.3703
+  Recall: 0.7961
+  F1-score: 0.5055
+lgb Validation AUC: 0.9497
+Training xgb model...
+
+Model evaluation results:
+ROC AUC: 0.9585
+PR AUC: 0.7690
+
+Classification Report:
+Category 0:
+  Precision: 0.9918
+  Recall: 0.9811
+  F1-score: 0.9864
+Category 1:
+  Precision: 0.5979
+  Recall: 0.7759
+  F1-score: 0.6754
+xgb Validation AUC: 0.9585
+Training catboost model...
+0:	total: 21.9ms	remaining: 43.7s
+500:	total: 10.9s	remaining: 32.6s
+1000:	total: 21.9s	remaining: 21.9s
+1500:	total: 32.7s	remaining: 10.9s
+1999:	total: 43.8s	remaining: 0us
+
+Model evaluation results:
+ROC AUC: 0.9505
+PR AUC: 0.6930
+
+Classification Report:
+Category 0:
+  Precision: 0.9921
+  Recall: 0.9528
+  F1-score: 0.9721
+Category 1:
+  Precision: 0.3780
+  Recall: 0.7916
+  F1-score: 0.5117
+catboost Validation AUC: 0.9505
+
+Training fold 3/5
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Number of samples in resampled validation set: 94486
+Training rf model...
+
+Model evaluation results:
+ROC AUC: 0.9463
+PR AUC: 0.7079
+
+Classification Report:
+Category 0:
+  Precision: 0.9826
+  Recall: 0.9966
+  F1-score: 0.9896
+Category 1:
+  Precision: 0.8469
+  Recall: 0.5136
+  F1-score: 0.6394
+rf Validation AUC: 0.9463
+Training lgb model...
+
+Model evaluation results:
+ROC AUC: 0.9531
+PR AUC: 0.7059
+
+Classification Report:
+Category 0:
+  Precision: 0.9926
+  Recall: 0.9524
+  F1-score: 0.9721
+Category 1:
+  Precision: 0.3800
+  Recall: 0.8043
+  F1-score: 0.5162
+lgb Validation AUC: 0.9531
+Training xgb model...
+
+Model evaluation results:
+ROC AUC: 0.9625
+PR AUC: 0.7704
+
+Classification Report:
+Category 0:
+  Precision: 0.9916
+  Recall: 0.9816
+  F1-score: 0.9866
+Category 1:
+  Precision: 0.6029
+  Recall: 0.7716
+  F1-score: 0.6769
+xgb Validation AUC: 0.9625
+Training catboost model...
+0:	total: 24.2ms	remaining: 48.4s
+500:	total: 10.8s	remaining: 32.2s
+1000:	total: 21.5s	remaining: 21.5s
+1500:	total: 32.4s	remaining: 10.8s
+1999:	total: 43.3s	remaining: 0us
+
+Model evaluation results:
+ROC AUC: 0.9527
+PR AUC: 0.7021
+
+Classification Report:
+Category 0:
+  Precision: 0.9926
+  Recall: 0.9541
+  F1-score: 0.9730
+Category 1:
+  Precision: 0.3886
+  Recall: 0.8037
+  F1-score: 0.5239
+catboost Validation AUC: 0.9527
+
+Training fold 4/5
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Number of samples in resampled validation set: 94486
+Training rf model...
+
+Model evaluation results:
+ROC AUC: 0.9410
+PR AUC: 0.6936
+
+Classification Report:
+Category 0:
+  Precision: 0.9825
+  Recall: 0.9962
+  F1-score: 0.9893
+Category 1:
+  Precision: 0.8294
+  Recall: 0.5118
+  F1-score: 0.6330
+rf Validation AUC: 0.9410
+Training lgb model...
+
+Model evaluation results:
+ROC AUC: 0.9484
+PR AUC: 0.6907
+
+Classification Report:
+Category 0:
+  Precision: 0.9924
+  Recall: 0.9501
+  F1-score: 0.9708
+Category 1:
+  Precision: 0.3672
+  Recall: 0.7989
+  F1-score: 0.5031
+lgb Validation AUC: 0.9484
+Training xgb model...
+
+Model evaluation results:
+ROC AUC: 0.9584
+PR AUC: 0.7536
+
+Classification Report:
+Category 0:
+  Precision: 0.9913
+  Recall: 0.9800
+  F1-score: 0.9856
+Category 1:
+  Precision: 0.5810
+  Recall: 0.7641
+  F1-score: 0.6600
+xgb Validation AUC: 0.9584
+Training catboost model...
+0:	total: 26.2ms	remaining: 52.4s
+500:	total: 11.1s	remaining: 33.2s
+1000:	total: 22.1s	remaining: 22s
+1500:	total: 33s	remaining: 11s
+1999:	total: 44s	remaining: 0us
+
+Model evaluation results:
+ROC AUC: 0.9496
+PR AUC: 0.6830
+
+Classification Report:
+Category 0:
+  Precision: 0.9922
+  Recall: 0.9525
+  F1-score: 0.9719
+Category 1:
+  Precision: 0.3770
+  Recall: 0.7931
+  F1-score: 0.5111
+catboost Validation AUC: 0.9496
+
+Training fold 5/5
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Handling imbalanced data using SMOTE...
+Fraud sample ratio in original data: 0.0350
+Fraud sample ratio after resampling: 0.5000
+Number of samples in resampled validation set: 94486
+Training rf model...
+
+Model evaluation results:
+ROC AUC: 0.9469
+PR AUC: 0.7137
+
+Classification Report:
+Category 0:
+  Precision: 0.9830
+  Recall: 0.9963
+  F1-score: 0.9896
+Category 1:
+  Precision: 0.8389
+  Recall: 0.5245
+  F1-score: 0.6454
+rf Validation AUC: 0.9469
+Training lgb model...
+
+Model evaluation results:
+ROC AUC: 0.9549
+PR AUC: 0.7125
+
+Classification Report:
+Category 0:
+  Precision: 0.9930
+  Recall: 0.9516
+  F1-score: 0.9719
+Category 1:
+  Precision: 0.3792
+  Recall: 0.8146
+  F1-score: 0.5175
+lgb Validation AUC: 0.9549
+Training xgb model...
+
+Model evaluation results:
+ROC AUC: 0.9641
+PR AUC: 0.7763
+
+Classification Report:
+Category 0:
+  Precision: 0.9921
+  Recall: 0.9798
+  F1-score: 0.9859
+Category 1:
+  Precision: 0.5846
+  Recall: 0.7852
+  F1-score: 0.6702
+xgb Validation AUC: 0.9641
+Training catboost model...
+0:	total: 25.9ms	remaining: 51.7s
+500:	total: 11.4s	remaining: 34.2s
+1000:	total: 22.7s	remaining: 22.7s
+1500:	total: 34.2s	remaining: 11.4s
+1999:	total: 45.6s	remaining: 0us
+
+Model evaluation results:
+ROC AUC: 0.9547
+PR AUC: 0.7074
+
+Classification Report:
+Category 0:
+  Precision: 0.9928
+  Recall: 0.9521
+  F1-score: 0.9720
+Category 1:
+  Precision: 0.3798
+  Recall: 0.8091
+  F1-score: 0.5169
+catboost Validation AUC: 0.9547
+
+Total number of samples for meta-model training data: 472432
+
+Training meta models...
+Meta-model 1 (prediction results) AUC: 0.9060
+Meta-model 2 (prediction probabilities) AUC: 0.9714
+Ensemble model AUC: 0.9705
+
+Saving meta-model training data to meta_model_data directory...
+Base models' prediction results saved to meta_model_data/meta_train_pred.csv
+Base models' prediction probabilities saved to meta_model_data/meta_train_prob.csv
+
+Saving models to models directory...
+Saved base model rf to models/base_rf.pkl
+Saved base model lgb to models/base_lgb.pkl
+Saved base model xgb to models/base_xgb.pkl
+Saved base model catboost to models/base_catboost.pkl
+Saved meta model meta_pred to models/meta_meta_pred.pkl
+Saved meta model meta_prob to models/meta_meta_prob.pkl
+Saved scaler to models/scaler.pkl
+
+Making predictions on test set...
+Predicting with rf model...
+
+rf model evaluation results:
+ROC AUC: 0.9449
+PR AUC: 0.7035
+Predicting with lgb model...
+
+lgb model evaluation results:
+ROC AUC: 0.9530
+PR AUC: 0.7019
+Predicting with xgb model...
+
+xgb model evaluation results:
+ROC AUC: 0.9630
+PR AUC: 0.7697
+Predicting with catboost model...
+
+catboost model evaluation results:
+ROC AUC: 0.9525
+PR AUC: 0.6980
+
+Model evaluation results:
+ROC AUC: 0.9621
+PR AUC: 0.7684
+
+Classification Report:
+Category 0:
+  Precision: 0.9861
+  Recall: 0.9960
+  F1-score: 0.9910
+Category 1:
+  Precision: 0.8481
+  Recall: 0.6119
+  F1-score: 0.7109
+
+Saving prediction results to fraud_detection_results.csv...
+Prediction results saved to fraud_detection_results.csv
