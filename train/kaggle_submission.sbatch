@@ -12,4 +12,4 @@ module load miniforge
 conda activate c7y_env
 
 # 运行Python脚本
-python validate_2.py
+python validate.py
