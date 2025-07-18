@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'train'))
 
 def test_dummy():
     """
@@ -28,7 +28,7 @@ def test_imports():
     
     try:
         # Test main module import
-        from fraud_detection_stacking import (
+        from train.fraud_detection_stacking import (
             build_base_models,
             build_meta_models,
             save_models,
@@ -58,7 +58,7 @@ def test_model_building():
     print("Testing model building...")
     
     try:
-        from fraud_detection_stacking import build_base_models, build_meta_models
+        from train.fraud_detection_stacking import build_base_models, build_meta_models
         
         # Test base models
         base_models = build_base_models()
@@ -99,7 +99,7 @@ def test_basic_functionality():
         from sklearn.ensemble import RandomForestClassifier
         from sklearn.linear_model import LogisticRegression
         import lightgbm as lgb
-        from fraud_detection_stacking import predict, evaluate
+        from train.fraud_detection_stacking import predict, evaluate
         
         # Create simple test data
         np.random.seed(42)
