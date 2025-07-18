@@ -15,7 +15,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Add current directory to path to import the main module
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'train'))
 
 try:
     from train.fraud_detection_stacking import (
