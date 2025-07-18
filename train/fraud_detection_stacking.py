@@ -28,11 +28,141 @@ import xgboost as xgb
 import lightgbm as lgb
 from imblearn.over_sampling import SMOTE
 import warnings
+import shap
 
 warnings.filterwarnings('ignore')
 
 # Set random seed for reproducibility
 np.random.seed(42)
+
+
+# SHAP analysis function for base models
+def analyze_base_models_with_shap(base_models, X_val, feature_names, output_dir="shap_analysis"):
+    """
+    使用SHAP分析每个基模型的特征贡献
+    
+    Parameters:
+        base_models: 训练好的基模型字典
+        X_val: 验证集特征数据
+        feature_names: 特征名称列表
+        output_dir: SHAP图表保存目录
+    """
+    print("\n开始SHAP分析...")
+    
+    # 创建输出目录
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 将X_val转换为DataFrame以便使用特征名称
+    if isinstance(X_val, np.ndarray):
+        X_val_df = pd.DataFrame(X_val, columns=feature_names)
+    else:
+        X_val_df = X_val.copy()
+    
+    # 为了计算效率，使用样本子集进行SHAP分析
+    sample_size = min(1000, len(X_val_df))
+    X_sample = X_val_df.sample(n=sample_size, random_state=42)
+    
+    for model_name, model in base_models.items():
+        print(f"\n正在分析 {model_name} 模型...")
+        
+        try:
+            # 创建SHAP解释器
+            if model_name == 'lgb':
+                # 对于LightGBM，使用TreeExplainer
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(X_sample)
+                
+            elif model_name == 'xgb':
+                # 对于XGBoost，使用TreeExplainer
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(X_sample)
+                
+            elif model_name == 'rf':
+                # 对于随机森林，使用TreeExplainer
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(X_sample)
+                    
+            elif model_name == 'catboost':
+                # 对于CatBoost，使用TreeExplainer
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(X_sample)
+                
+            else:
+                # 对于其他模型（如SVM, MLP），使用通用Explainer
+                explainer = shap.Explainer(model, X_sample)
+                shap_values = explainer(X_sample)
+                
+                # 如果返回的是Explanation对象，提取values
+                if hasattr(shap_values, 'values'):
+                    shap_values = shap_values.values
+            
+            # 统一处理二分类的SHAP值格式
+            # 处理3维数组格式 (样本数, 特征数, 类别数)
+            if len(shap_values.shape) == 3 and shap_values.shape[2] == 2:
+                shap_values = shap_values[:, :, 1]  # 取正类的SHAP值
+            # 处理列表格式（某些版本的SHAP可能返回列表）
+            elif isinstance(shap_values, list) and len(shap_values) == 2:
+                shap_values = shap_values[1]  # 取正类的SHAP值
+            
+            # Generate SHAP summary plot
+            plt.figure(figsize=(12, 8))
+            shap.summary_plot(shap_values, X_sample, feature_names=feature_names, show=False)
+            plt.title(f'{model_name.upper()} Model - SHAP Summary Plot', fontsize=16, fontweight='bold', pad=15)
+            plt.xlabel('SHAP Value', fontsize=12, fontweight='bold')
+            plt.ylabel('Features', fontsize=12, fontweight='bold')
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, f'{model_name}_shap_summary.png'), dpi=300, bbox_inches='tight')
+            plt.close()
+
+            # Generate SHAP bar plot (feature importance)
+            plt.figure(figsize=(10, 8))
+            shap.summary_plot(shap_values, X_sample, feature_names=feature_names, plot_type="bar", show=False)
+            plt.title(f'{model_name.upper()} Model - SHAP Feature Importance', fontsize=16, fontweight='bold', pad=15)
+            plt.xlabel('Mean |SHAP Value|', fontsize=12, fontweight='bold')
+            plt.ylabel('Features', fontsize=12, fontweight='bold')
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, f'{model_name}_shap_importance.png'), dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            # 计算平均SHAP值并输出特征贡献分析
+            mean_shap_values = np.mean(np.abs(shap_values), axis=0)
+            feature_importance = pd.DataFrame({
+                'feature': feature_names,
+                'importance': mean_shap_values
+            }).sort_values('importance', ascending=False)
+            
+            print(f"\n{model_name.upper()} 模型 - 前10个最重要特征:")
+            for idx, row in feature_importance.head(10).iterrows():
+                print(f"  {row['feature']}: {row['importance']:.4f}")
+            
+            # 保存特征重要性到CSV
+            feature_importance.to_csv(os.path.join(output_dir, f'{model_name}_shap_feature_importance.csv'), index=False)
+            
+            # 分析具体特征对预测的影响方向
+            print(f"\n{model_name.upper()} 模型 - 特征影响分析:")
+            mean_shap_signed = np.mean(shap_values, axis=0)
+            
+            # 找出推向欺诈的特征（正SHAP值）
+            fraud_features = [(feature_names[i], mean_shap_signed[i]) for i in range(len(feature_names)) if mean_shap_signed[i] > 0]
+            fraud_features.sort(key=lambda x: x[1], reverse=True)
+            
+            # 找出推向非欺诈的特征（负SHAP值）
+            non_fraud_features = [(feature_names[i], mean_shap_signed[i]) for i in range(len(feature_names)) if mean_shap_signed[i] < 0]
+            non_fraud_features.sort(key=lambda x: x[1])
+            
+            print("  推向欺诈的前5个特征:")
+            for feature, value in fraud_features[:5]:
+                print(f"    • '{feature}' 导致模型偏向欺诈 (SHAP值: {value:.4f})")
+            
+            print("  推向非欺诈的前5个特征:")
+            for feature, value in non_fraud_features[:5]:
+                print(f"    • '{feature}' 把预测结果推低 (SHAP值: {value:.4f})")
+                
+        except Exception as e:
+            print(f"分析 {model_name} 模型时出错: {str(e)}")
+            continue
+    
+    print(f"\nSHAP分析完成！结果保存在 {output_dir} 目录中。")
 
 
 # Data loading and preprocessing function
@@ -494,16 +624,26 @@ def train_and_evaluate(X, y, n_splits=6, meta_data_dir="meta_model_data"):
         print(f"\nTraining fold {fold + 1}/{n_splits}")
         # Ensure indices are in the correct format
         if isinstance(X, pd.DataFrame):
-            X_train_fold = X.iloc[train_idx].values
-            X_val_fold = X.iloc[val_idx].values
+            X_train_fold = X.iloc[train_idx]
+            X_val_fold = X.iloc[val_idx]
         else:
             X_train_fold, X_val_fold = X[train_idx], X[val_idx]
 
         y_train_fold, y_val_fold = y[train_idx], y[val_idx]
 
         # Handle imbalanced data (apply SMOTE only on training set)
-        X_train_resampled, y_train_resampled = handle_imbalance(X_train_fold, y_train_fold, False)
-        X_val_resampled, y_val_resampled = handle_imbalance(X_val_fold, y_val_fold, False)
+        # Convert to numpy arrays for SMOTE processing
+        if isinstance(X_train_fold, pd.DataFrame):
+            X_train_fold_array = X_train_fold.values
+        else:
+            X_train_fold_array = X_train_fold
+        if isinstance(X_val_fold, pd.DataFrame):
+            X_val_fold_array = X_val_fold.values
+        else:
+            X_val_fold_array = X_val_fold
+            
+        X_train_resampled, y_train_resampled = handle_imbalance(X_train_fold_array, y_train_fold, False)
+        X_val_resampled, y_val_resampled = handle_imbalance(X_val_fold_array, y_val_fold, False)
         print(f"Number of samples in resampled validation set: {len(y_val_resampled)}")
 
         # Create prediction result arrays for the current fold's resampled validation set
@@ -525,21 +665,20 @@ def train_and_evaluate(X, y, n_splits=6, meta_data_dir="meta_model_data"):
 
             # Calculate AUC score
             metrics = evaluate(y_val_resampled, y_pred, y_prob)
-
-            # Print evaluation results
-            print("\nModel evaluation results:")
-            print(f"ROC AUC: {metrics['roc_auc']:.4f}")
-            print(f"PR AUC: {metrics['pr_auc']:.4f}")
-            print("\nClassification Report:")
-            for label, values in metrics['classification_report'].items():
-                if label in ['0', '1']:
-                    print(f"Category {label}:")
-                    print(f"  Precision: {values['precision']:.4f}")
-                    print(f"  Recall: {values['recall']:.4f}")
-                    print(f"  F1-score: {values['f1-score']:.4f}")
             auc_score = roc_auc_score(y_val_resampled, y_prob)
             base_auc_scores[model_name].append(auc_score)
-            print(f"{model_name} Validation AUC: {auc_score:.4f}")
+            
+            # Print evaluation results only for the last fold (fold 5)
+            if fold == n_splits - 1:
+                print(f"\n{model_name} Model - Final Fold Evaluation Results:")
+                print(f"ROC AUC: {metrics['roc_auc']:.4f}")
+                print(f"PR AUC: {metrics['pr_auc']:.4f}")
+                print(f"Accuracy: {metrics['accuracy']:.4f}")
+                print(f"Precision: {metrics['precision']:.4f}")
+                print(f"Recall: {metrics['recall']:.4f}")
+                print(f"F1-score: {metrics['f1_score']:.4f}")
+            else:
+                print(f"{model_name} Validation AUC: {auc_score:.4f}")
 
         # Add current fold's results to the total list
         all_meta_train_pred.append(fold_meta_pred)
@@ -564,20 +703,50 @@ def train_and_evaluate(X, y, n_splits=6, meta_data_dir="meta_model_data"):
     # Meta-model 1: Use base model prediction results
     meta_models['meta_pred'].fit(meta_train_pred, meta_y)
     meta_pred_prob = meta_models['meta_pred'].predict_proba(meta_train_pred)[:, 1]
+    meta_pred_pred = (meta_pred_prob >= 0.5).astype(int)
     meta_auc_scores['meta_pred'].append(roc_auc_score(meta_y, meta_pred_prob))
-    print(f"Meta-model 1 (prediction results) AUC: {meta_auc_scores['meta_pred'][0]:.4f}")
+    
+    # Evaluate meta-model 1
+    meta_pred_metrics = evaluate(meta_y, meta_pred_pred, meta_pred_prob)
+    print(f"\nMeta-model 1 (prediction results) Evaluation Results:")
+    print(f"ROC AUC: {meta_pred_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {meta_pred_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {meta_pred_metrics['accuracy']:.4f}")
+    print(f"Precision: {meta_pred_metrics['precision']:.4f}")
+    print(f"Recall: {meta_pred_metrics['recall']:.4f}")
+    print(f"F1-score: {meta_pred_metrics['f1_score']:.4f}")
 
     # Meta-model 2: Use base model prediction probabilities
     meta_models['meta_prob'].fit(meta_train_prob, meta_y)
     meta_prob_prob = meta_models['meta_prob'].predict_proba(meta_train_prob)[:, 1]
+    meta_prob_pred = (meta_prob_prob >= 0.5).astype(int)
     meta_auc_scores['meta_prob'].append(roc_auc_score(meta_y, meta_prob_prob))
-    print(f"Meta-model 2 (prediction probabilities) AUC: {meta_auc_scores['meta_prob'][0]:.4f}")
+    
+    # Evaluate meta-model 2
+    meta_prob_metrics = evaluate(meta_y, meta_prob_pred, meta_prob_prob)
+    print(f"\nMeta-model 2 (prediction probabilities) Evaluation Results:")
+    print(f"ROC AUC: {meta_prob_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {meta_prob_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {meta_prob_metrics['accuracy']:.4f}")
+    print(f"Precision: {meta_prob_metrics['precision']:.4f}")
+    print(f"Recall: {meta_prob_metrics['recall']:.4f}")
+    print(f"F1-score: {meta_prob_metrics['f1_score']:.4f}")
 
     # Soft voting ensemble
     ensemble_prob = (meta_pred_prob + meta_prob_prob) / 2
+    ensemble_pred = (ensemble_prob >= 0.5).astype(int)
     ensemble_auc = roc_auc_score(meta_y, ensemble_prob)
     ensemble_auc_scores.append(ensemble_auc)
-    print(f"Ensemble model AUC: {ensemble_auc:.4f}")
+    
+    # Evaluate ensemble model
+    ensemble_metrics = evaluate(meta_y, ensemble_pred, ensemble_prob)
+    print(f"\nEnsemble Model Evaluation Results:")
+    print(f"ROC AUC: {ensemble_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {ensemble_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {ensemble_metrics['accuracy']:.4f}")
+    print(f"Precision: {ensemble_metrics['precision']:.4f}")
+    print(f"Recall: {ensemble_metrics['recall']:.4f}")
+    print(f"F1-score: {ensemble_metrics['f1_score']:.4f}")
 
     # Save meta-model training data
     save_meta_training_data_to_csv(meta_train_pred, meta_train_prob, meta_y, meta_data_dir)
@@ -588,6 +757,16 @@ def train_and_evaluate(X, y, n_splits=6, meta_data_dir="meta_model_data"):
         'meta_models': {model_name: np.mean(scores) for model_name, scores in meta_auc_scores.items()},
         'ensemble': np.mean(ensemble_auc_scores)
     }
+    
+    # Perform SHAP analysis on base models
+    print("\nPerforming SHAP analysis on base models...")
+    # Use the last fold's validation data for SHAP analysis
+    # Generate feature names if not provided
+    if isinstance(X_val_fold, pd.DataFrame):
+        feature_names = X_val_fold.columns.tolist()
+    else:
+        feature_names = [f'feature_{i}' for i in range(X_val_fold.shape[1])]
+    analyze_base_models_with_shap(base_models, X_val_fold, feature_names=feature_names, output_dir='shap_analysis')
 
     return base_models, meta_models, cv_scores
 
@@ -624,18 +803,58 @@ def predict(X, y,base_models, meta_models):
         metrics = evaluate(y, base_pred[:, i], base_prob[:, i])
 
         # Print evaluation results
-        print(f"\n{model_name} model evaluation results:")
+        print(f"\n{model_name} Model - Test Set Evaluation Results:")
         print(f"ROC AUC: {metrics['roc_auc']:.4f}")
         print(f"PR AUC: {metrics['pr_auc']:.4f}")
+        print(f"Accuracy: {metrics['accuracy']:.4f}")
+        print(f"Precision: {metrics['precision']:.4f}")
+        print(f"Recall: {metrics['recall']:.4f}")
+        print(f"F1-score: {metrics['f1_score']:.4f}")
+    
+    # Perform SHAP analysis on base models using test data
+    print("\nPerforming SHAP analysis on base models using test data...")
+    # Generate feature names if not provided
+    if isinstance(X, pd.DataFrame):
+        feature_names = X.columns.tolist()
+    else:
+        feature_names = [f'feature_{i}' for i in range(X_array.shape[1])]
+    analyze_base_models_with_shap(base_models, X_array, feature_names=feature_names, output_dir='shap_analysis_test')
 
 
     # Make predictions with meta models
     meta_pred_prob = meta_models['meta_pred'].predict_proba(base_pred)[:, 1]
+    meta_pred_pred = meta_models['meta_pred'].predict(base_pred)
+    meta_pred_metrics = evaluate(y, meta_pred_pred, meta_pred_prob)
+    print(f"\nMeta-model 1 (prediction results) - Test Set Evaluation Results:")
+    print(f"ROC AUC: {meta_pred_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {meta_pred_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {meta_pred_metrics['accuracy']:.4f}")
+    print(f"Precision: {meta_pred_metrics['precision']:.4f}")
+    print(f"Recall: {meta_pred_metrics['recall']:.4f}")
+    print(f"F1-score: {meta_pred_metrics['f1_score']:.4f}")
+
     meta_prob_prob = meta_models['meta_prob'].predict_proba(base_prob)[:, 1]
+    meta_prob_pred = meta_models['meta_prob'].predict(base_prob)
+    meta_prob_metrics = evaluate(y, meta_prob_pred, meta_prob_prob)
+    print(f"\nMeta-model 2 (prediction probabilities) - Test Set Evaluation Results:")
+    print(f"ROC AUC: {meta_prob_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {meta_prob_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {meta_prob_metrics['accuracy']:.4f}")
+    print(f"Precision: {meta_prob_metrics['precision']:.4f}")
+    print(f"Recall: {meta_prob_metrics['recall']:.4f}")
+    print(f"F1-score: {meta_prob_metrics['f1_score']:.4f}")
 
     # Soft voting ensemble
     ensemble_prob = (meta_pred_prob + meta_prob_prob) / 2
     ensemble_pred = (ensemble_prob >= 0.5).astype(int)
+    ensemble_metrics = evaluate(y, ensemble_pred, ensemble_prob)
+    print(f"\nEnsemble Model - Test Set Evaluation Results:")
+    print(f"ROC AUC: {ensemble_metrics['roc_auc']:.4f}")
+    print(f"PR AUC: {ensemble_metrics['pr_auc']:.4f}")
+    print(f"Accuracy: {ensemble_metrics['accuracy']:.4f}")
+    print(f"Precision: {ensemble_metrics['precision']:.4f}")
+    print(f"Recall: {ensemble_metrics['recall']:.4f}")
+    print(f"F1-score: {ensemble_metrics['f1_score']:.4f}")
 
     return ensemble_pred, ensemble_prob
 
@@ -653,12 +872,22 @@ def evaluate(y_true, y_pred, y_prob):
     Returns:
         metrics: Evaluation metrics dictionary
     """
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+    
     # Calculate ROC AUC
     roc_auc = roc_auc_score(y_true, y_prob)
 
     # Calculate PR AUC
     precision, recall, _ = precision_recall_curve(y_true, y_prob)
     pr_auc = auc(recall, precision)
+
+    # Calculate accuracy
+    accuracy = accuracy_score(y_true, y_pred)
+    
+    # Calculate precision, recall, F1-score
+    precision_score_val = precision_score(y_true, y_pred, average='binary')
+    recall_score_val = recall_score(y_true, y_pred, average='binary')
+    f1_score_val = f1_score(y_true, y_pred, average='binary')
 
     # Calculate confusion matrix
     cm = confusion_matrix(y_true, y_pred)
@@ -669,6 +898,10 @@ def evaluate(y_true, y_pred, y_prob):
     metrics = {
         'roc_auc': roc_auc,
         'pr_auc': pr_auc,
+        'accuracy': accuracy,
+        'precision': precision_score_val,
+        'recall': recall_score_val,
+        'f1_score': f1_score_val,
         'confusion_matrix': cm,
         'classification_report': report
     }
