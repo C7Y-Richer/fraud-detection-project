@@ -1,4 +1,4 @@
-name: Fraud Detection System Tests
+name: Fraud Detection System Test
 
 on:
   push:

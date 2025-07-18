@@ -39,70 +39,70 @@ np.random.seed(42)
 # SHAP analysis function for base models
 def analyze_base_models_with_shap(base_models, X_val, feature_names, output_dir="shap_analysis"):
     """
-    使用SHAP分析每个基模型的特征贡献
+    Use SHAP to analyze feature contributions for each base model
     
     Parameters:
-        base_models: 训练好的基模型字典
-        X_val: 验证集特征数据
-        feature_names: 特征名称列表
-        output_dir: SHAP图表保存目录
+        base_models: dictionary of trained base models
+        X_val: validation feature data
+        feature_names: list of feature names
+        output_dir: directory to save SHAP plots
     """
-    print("\n开始SHAP分析...")
+    print("\nStarting SHAP analysis...")
     
-    # 创建输出目录
+    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # 将X_val转换为DataFrame以便使用特征名称
+    # Convert X_val to DataFrame to use feature names
     if isinstance(X_val, np.ndarray):
         X_val_df = pd.DataFrame(X_val, columns=feature_names)
     else:
         X_val_df = X_val.copy()
     
-    # 为了计算效率，使用样本子集进行SHAP分析
+    # For computational efficiency, use a sample subset for SHAP analysis
     sample_size = min(1000, len(X_val_df))
     X_sample = X_val_df.sample(n=sample_size, random_state=42)
     
     for model_name, model in base_models.items():
-        print(f"\n正在分析 {model_name} 模型...")
+        print(f"\nAnalyzing {model_name} model...")
         
         try:
-            # 创建SHAP解释器
+            # Create SHAP explainer
             if model_name == 'lgb':
-                # 对于LightGBM，使用TreeExplainer
+                # For LightGBM, use TreeExplainer
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X_sample)
                 
             elif model_name == 'xgb':
-                # 对于XGBoost，使用TreeExplainer
+                # For XGBoost, use TreeExplainer
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X_sample)
                 
             elif model_name == 'rf':
-                # 对于随机森林，使用TreeExplainer
+                # For Random Forest, use TreeExplainer
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X_sample)
                     
             elif model_name == 'catboost':
-                # 对于CatBoost，使用TreeExplainer
+                # For CatBoost, use TreeExplainer
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X_sample)
                 
             else:
-                # 对于其他模型（如SVM, MLP），使用通用Explainer
+                # For other models (e.g., SVM, MLP), use the general Explainer
                 explainer = shap.Explainer(model, X_sample)
                 shap_values = explainer(X_sample)
                 
-                # 如果返回的是Explanation对象，提取values
+                # If the result is an Explanation object, extract values
                 if hasattr(shap_values, 'values'):
                     shap_values = shap_values.values
             
-            # 统一处理二分类的SHAP值格式
-            # 处理3维数组格式 (样本数, 特征数, 类别数)
+            # Normalize SHAP values format for binary classification
+            # Handle 3D array format (samples, features, classes)
             if len(shap_values.shape) == 3 and shap_values.shape[2] == 2:
-                shap_values = shap_values[:, :, 1]  # 取正类的SHAP值
-            # 处理列表格式（某些版本的SHAP可能返回列表）
+                shap_values = shap_values[:, :, 1]  # take SHAP values for the positive class
+            # Handle list format (some SHAP versions may return a list)
             elif isinstance(shap_values, list) and len(shap_values) == 2:
-                shap_values = shap_values[1]  # 取正类的SHAP值
+                shap_values = shap_values[1]  # take SHAP values for the positive class
             
             # Generate SHAP summary plot
             plt.figure(figsize=(12, 8))
@@ -124,45 +124,45 @@ def analyze_base_models_with_shap(base_models, X_val, feature_names, output_dir=
             plt.savefig(os.path.join(output_dir, f'{model_name}_shap_importance.png'), dpi=300, bbox_inches='tight')
             plt.close()
             
-            # 计算平均SHAP值并输出特征贡献分析
+            # Calculate mean SHAP values and output feature contribution analysis
             mean_shap_values = np.mean(np.abs(shap_values), axis=0)
             feature_importance = pd.DataFrame({
                 'feature': feature_names,
                 'importance': mean_shap_values
             }).sort_values('importance', ascending=False)
             
-            print(f"\n{model_name.upper()} 模型 - 前10个最重要特征:")
+            print(f"\nTop 10 important features for {model_name.upper()} model:")
             for idx, row in feature_importance.head(10).iterrows():
                 print(f"  {row['feature']}: {row['importance']:.4f}")
             
-            # 保存特征重要性到CSV
+            # Save feature importance to CSV
             feature_importance.to_csv(os.path.join(output_dir, f'{model_name}_shap_feature_importance.csv'), index=False)
             
-            # 分析具体特征对预测的影响方向
-            print(f"\n{model_name.upper()} 模型 - 特征影响分析:")
+            # Analyze the direction of feature impact on predictions
+            print(f"\nFeature impact analysis for {model_name.upper()} model:")
             mean_shap_signed = np.mean(shap_values, axis=0)
             
-            # 找出推向欺诈的特征（正SHAP值）
+            # Identify features pushing towards fraud (positive SHAP values)
             fraud_features = [(feature_names[i], mean_shap_signed[i]) for i in range(len(feature_names)) if mean_shap_signed[i] > 0]
             fraud_features.sort(key=lambda x: x[1], reverse=True)
             
-            # 找出推向非欺诈的特征（负SHAP值）
+            # Identify features pushing towards non-fraud (negative SHAP values)
             non_fraud_features = [(feature_names[i], mean_shap_signed[i]) for i in range(len(feature_names)) if mean_shap_signed[i] < 0]
             non_fraud_features.sort(key=lambda x: x[1])
             
-            print("  推向欺诈的前5个特征:")
+            print("  Top 5 features pushing towards fraud:")
             for feature, value in fraud_features[:5]:
-                print(f"    • '{feature}' 导致模型偏向欺诈 (SHAP值: {value:.4f})")
+                print(f"    • '{feature}' pushes model towards fraud (SHAP value: {value:.4f})")
             
-            print("  推向非欺诈的前5个特征:")
+            print("  Top 5 features pushing towards non-fraud:")
             for feature, value in non_fraud_features[:5]:
-                print(f"    • '{feature}' 把预测结果推低 (SHAP值: {value:.4f})")
+                print(f"    • '{feature}' pushes prediction lower (SHAP value: {value:.4f})")
                 
         except Exception as e:
-            print(f"分析 {model_name} 模型时出错: {str(e)}")
+            print(f"Error analyzing {model_name} model: {str(e)}")
             continue
     
-    print(f"\nSHAP分析完成！结果保存在 {output_dir} 目录中。")
+    print(f"\nSHAP analysis completed! Results saved in directory {output_dir}.")
 
 
 # Data loading and preprocessing function
