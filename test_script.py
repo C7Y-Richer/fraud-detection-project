@@ -229,7 +229,7 @@ def test_simple_prediction():
     
     try:
         # Import prediction function
-        from fraud_detection_stacking import predict, evaluate
+        from train.fraud_detection_stacking import predict, evaluate
         
         # Create simple synthetic data
         np.random.seed(42)
