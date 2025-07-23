@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-shield-alt text-blue-600 text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-800">Fraud Detection System</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="healthStatus" class="flex items-center">
+                        <div class="w-3 h-3 bg-gray-400 rounded-full mr-2"></div>
+                        <span class="text-sm text-gray-600">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Feature Selection Cards -->
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <!-- Single Transaction Prediction -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-user text-blue-600 text-xl mr-3"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Single Transaction Prediction</h2>
+                </div>
+                <p class="text-gray-600 mb-4">Input single transaction data for fraud risk assessment</p>
+                <button onclick="showSinglePrediction()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
+                    Start Prediction
+                </button>
+            </div>
+
+            <!-- Batch File Prediction -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-file-csv text-green-600 text-xl mr-3"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Batch File Prediction</h2>
+                </div>
+                <p class="text-gray-600 mb-4">Upload CSV files for batch fraud detection</p>
+                <button onclick="showFilePrediction()" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-200">
+                    Upload File
+                </button>
+            </div>
+        </div>
+
+        <!-- Single Transaction Prediction Interface -->
+        <div id="singlePredictionPanel" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-800">Single Transaction Data Input</h3>
+                <button onclick="hideSinglePrediction()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="singlePredictionForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Transaction CSV Data</label>
+                    <textarea name="transaction_csv" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="TransactionID,TransactionDT,TransactionAmt,card1,card2,..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Please enter one line of data from transaction.csv, including headers</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Identity CSV Data</label>
+                    <textarea name="identity_csv" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="TransactionID,id_01,id_02,..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Please enter one line of data from identity.csv, including headers</p>
+                </div>
+            </form>
+            
+            <div class="mt-6 flex justify-end space-x-4">
+                <button onclick="clearSingleForm()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-200">
+                    Clear
+                </button>
+                <button onclick="submitSinglePrediction()" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+                    <i class="fas fa-search mr-2"></i>Start Prediction
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Prediction Interface -->
+        <div id="filePredictionPanel" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-800">Batch File Prediction</h3>
+                <button onclick="hideFilePrediction()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Transaction CSV Upload -->
+                <div class="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center">
+                    <i class="fas fa-file-csv text-4xl text-blue-500 mb-4"></i>
+                    <p class="text-gray-600 mb-4">Upload Transaction CSV File</p>
+                    <input type="file" id="transactionFileInput" accept=".csv" class="hidden" onchange="handleTransactionFileSelect(event)">
+                    <button onclick="document.getElementById('transactionFileInput').click()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                        Select File
+                    </button>
+                    <div id="transactionFileInfo" class="hidden mt-4 p-2 bg-blue-50 rounded-lg text-left">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-csv text-blue-600 mr-2"></i>
+                            <span id="transactionFileName" class="text-blue-800 font-medium"></span>
+                            <span id="transactionFileSize" class="text-blue-600 ml-2"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Identity CSV Upload -->
+                <div class="border-2 border-dashed border-green-300 rounded-lg p-6 text-center">
+                    <i class="fas fa-file-csv text-4xl text-green-500 mb-4"></i>
+                    <p class="text-gray-600 mb-4">Upload Identity CSV File</p>
+                    <input type="file" id="identityFileInput" accept=".csv" class="hidden" onchange="handleIdentityFileSelect(event)">
+                    <button onclick="document.getElementById('identityFileInput').click()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                        Select File
+                    </button>
+                    <div id="identityFileInfo" class="hidden mt-4 p-2 bg-green-50 rounded-lg text-left">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-csv text-green-600 mr-2"></i>
+                            <span id="identityFileName" class="text-green-800 font-medium"></span>
+                            <span id="identityFileSize" class="text-green-600 ml-2"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button id="uploadButton" onclick="uploadFiles()" disabled class="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <i class="fas fa-upload mr-2"></i>Upload and Predict
+                </button>
+            </div>
+        </div>
+
+        <!-- Prediction Results Display -->
+        <div id="resultsPanel" class="hidden bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6">Prediction Results</h3>
+            
+            <!-- Single Prediction Results -->
+            <div id="singleResult" class="hidden">
+                <div class="grid md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100">Fraud Probability</p>
+                                <p id="fraudProb" class="text-2xl font-bold">-</p>
+                            </div>
+                            <i class="fas fa-percentage text-3xl text-blue-200"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100">Risk Level</p>
+                                <p id="riskLevel" class="text-2xl font-bold">-</p>
+                            </div>
+                            <i class="fas fa-exclamation-triangle text-3xl text-green-200"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100">Prediction Result</p>
+                                <p id="fraudResult" class="text-2xl font-bold">-</p>
+                            </div>
+                            <i id="fraudIcon" class="fas fa-shield-alt text-3xl text-purple-200"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <canvas id="probabilityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            <!-- Batch Prediction Results -->
+            <div id="batchResult" class="hidden">
+                <div class="grid md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-100 p-4 rounded-lg text-center">
+                        <p class="text-blue-600 font-semibold">Total Records</p>
+                        <p id="totalRecords" class="text-2xl font-bold text-blue-800">0</p>
+                    </div>
+                    <div class="bg-red-100 p-4 rounded-lg text-center">
+                        <p class="text-red-600 font-semibold">High Risk</p>
+                        <p id="highRisk" class="text-2xl font-bold text-red-800">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-4 rounded-lg text-center">
+                        <p class="text-yellow-600 font-semibold">Medium Risk</p>
+                        <p id="mediumRisk" class="text-2xl font-bold text-yellow-800">0</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-lg text-center">
+                        <p class="text-green-600 font-semibold">Low Risk</p>
+                        <p id="lowRisk" class="text-2xl font-bold text-green-800">0</p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <canvas id="riskDistributionChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fraud Probability</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prediction Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTable" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button onclick="downloadResults()" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-download mr-2"></i>Download Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Animation -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-700">Processing...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentBatchResults = null;
+
+        // Check server health status
+        async function checkHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                const statusElement = document.getElementById('healthStatus');
+                
+                if (data.status === 'healthy' && data.models_loaded) {
+                    statusElement.innerHTML = '<div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div><span class="text-sm text-green-600">Service Normal</span>';
+                } else {
+                    statusElement.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div><span class="text-sm text-red-600">Service Error</span>';
+                }
+            } catch (error) {
+                const statusElement = document.getElementById('healthStatus');
+                statusElement.innerHTML = '<div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div><span class="text-sm text-red-600">Connection Failed</span>';
+            }
+        }
+
+        // Show single prediction panel
+        function showSinglePrediction() {
+            document.getElementById('singlePredictionPanel').classList.remove('hidden');
+            document.getElementById('filePredictionPanel').classList.add('hidden');
+            document.getElementById('resultsPanel').classList.add('hidden');
+        }
+
+        // Hide single prediction panel
+        function hideSinglePrediction() {
+            document.getElementById('singlePredictionPanel').classList.add('hidden');
+        }
+
+        // Show file prediction panel
+        function showFilePrediction() {
+            document.getElementById('filePredictionPanel').classList.remove('hidden');
+            document.getElementById('singlePredictionPanel').classList.add('hidden');
+            document.getElementById('resultsPanel').classList.add('hidden');
+        }
+
+        // Hide file prediction panel
+        function hideFilePrediction() {
+            document.getElementById('filePredictionPanel').classList.add('hidden');
+        }
+
+        // Clear single form
+        function clearSingleForm() {
+            document.getElementById('singlePredictionForm').reset();
+        }
+
+        // Submit single prediction
+        async function submitSinglePrediction() {
+            const form = document.getElementById('singlePredictionForm');
+            const formData = new FormData(form);
+            const transaction_csv = formData.get('transaction_csv');
+            const identity_csv = formData.get('identity_csv');
+            
+            if (!transaction_csv || transaction_csv.trim() === '') {
+                alert('Please enter Transaction CSV data');
+                return;
+            }
+
+            const data = {
+                transaction_csv: transaction_csv,
+                identity_csv: identity_csv
+            };
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/predict/single', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displaySingleResult(result);
+                } else {
+                    alert('Prediction failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display single prediction result
+        function displaySingleResult(result) {
+            document.getElementById('resultsPanel').classList.remove('hidden');
+            document.getElementById('singleResult').classList.remove('hidden');
+            document.getElementById('batchResult').classList.add('hidden');
+
+            document.getElementById('fraudProb').textContent = (result.fraud_probability * 100).toFixed(2) + '%';
+            document.getElementById('riskLevel').textContent = result.risk_level;
+            document.getElementById('fraudResult').textContent = result.is_fraud ? 'Fraud' : 'Normal';
+            
+            const icon = document.getElementById('fraudIcon');
+            if (result.is_fraud) {
+                icon.className = 'fas fa-exclamation-triangle text-3xl text-purple-200';
+            } else {
+                icon.className = 'fas fa-shield-alt text-3xl text-purple-200';
+            }
+
+            // Draw probability chart
+            drawProbabilityChart(result.fraud_probability);
+        }
+
+        // Draw probability chart
+        function drawProbabilityChart(probability) {
+            const ctx = document.getElementById('probabilityChart').getContext('2d');
+            
+            // Destroy existing chart instance
+            if (probabilityChartInstance) {
+                probabilityChartInstance.destroy();
+            }
+            
+            // Create new chart instance
+            probabilityChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Fraud Probability', 'Normal Probability'],
+                    datasets: [{
+                        data: [probability * 100, (1 - probability) * 100],
+                        backgroundColor: ['#ef4444', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Fraud Probability Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle Transaction file selection
+        function handleTransactionFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('transactionFileInfo').classList.remove('hidden');
+                document.getElementById('transactionFileName').textContent = file.name;
+                document.getElementById('transactionFileSize').textContent = `(${(file.size / 1024).toFixed(2)} KB)`;
+                document.getElementById('uploadButton').disabled = false;
+            }
+        }
+
+        // Handle Identity file selection
+        function handleIdentityFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('identityFileInfo').classList.remove('hidden');
+                document.getElementById('identityFileName').textContent = file.name;
+                document.getElementById('identityFileSize').textContent = `(${(file.size / 1024).toFixed(2)} KB)`;
+            }
+        }
+
+        // Upload files
+        async function uploadFiles() {
+            const transactionFile = document.getElementById('transactionFileInput').files[0];
+            const identityFile = document.getElementById('identityFileInput').files[0];
+            
+            if (!transactionFile) {
+                alert('Please select Transaction CSV file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('transaction_file', transactionFile);
+            if (identityFile) {
+                formData.append('identity_file', identityFile);
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/predict/file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentBatchResults = result;
+                    displayBatchResults(result);
+                } else {
+                    alert('Prediction failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display batch prediction results
+        function displayBatchResults(result) {
+            document.getElementById('resultsPanel').classList.remove('hidden');
+            document.getElementById('batchResult').classList.remove('hidden');
+            document.getElementById('singleResult').classList.add('hidden');
+
+            const predictions = result.predictions;
+            let highRisk = 0, mediumRisk = 0, lowRisk = 0;
+
+            predictions.forEach(pred => {
+                if (pred.risk_level === 'High') highRisk++;
+                else if (pred.risk_level === 'Medium') mediumRisk++;
+                else if (pred.risk_level === 'Low') lowRisk++;
+            });
+
+            document.getElementById('totalRecords').textContent = result.total_records;
+            document.getElementById('highRisk').textContent = highRisk;
+            document.getElementById('mediumRisk').textContent = mediumRisk;
+            document.getElementById('lowRisk').textContent = lowRisk;
+
+            // Fill table
+            const tableBody = document.getElementById('resultsTable');
+            tableBody.innerHTML = '';
+            
+            predictions.slice(0, 100).forEach(pred => { // Only show first 100 records
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${pred.TransactionID}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${pred.fraud_probability ? (pred.fraud_probability * 100).toFixed(2) + '%' : 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            pred.risk_level === 'High' ? 'bg-red-100 text-red-800' :
+                            pred.risk_level === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                        }">
+                            ${pred.risk_level || 'N/A'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${pred.is_fraud ? 'Fraud' : 'Normal'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Draw risk distribution chart
+            drawRiskDistributionChart(highRisk, mediumRisk, lowRisk);
+        }
+
+        // Global variables to store chart instances
+        let riskDistributionChartInstance = null;
+        let probabilityChartInstance = null;
+        
+        // Draw risk distribution chart
+        function drawRiskDistributionChart(high, medium, low) {
+            const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+            
+            // Destroy existing chart instance
+            if (riskDistributionChartInstance) {
+                riskDistributionChartInstance.destroy();
+            }
+            
+            // Create new chart instance
+            riskDistributionChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                    datasets: [{
+                        label: 'Number of Transactions',
+                        data: [high, medium, low],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Risk Level Distribution'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Download results
+        function downloadResults() {
+            if (!currentBatchResults) return;
+            
+            const csv = convertToCSV(currentBatchResults.predictions);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fraud_detection_results.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Convert to CSV format
+        function convertToCSV(data) {
+            const headers = ['TransactionID', 'fraud_probability', 'is_fraud', 'risk_level'];
+            const csvContent = [headers.join(',')];
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    return typeof value === 'string' ? `"${value}"` : value;
+                });
+                csvContent.push(values.join(','));
+            });
+            
+            return csvContent.join('\n');
+        }
+
+        // Show loading animation
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        // Hide loading animation
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // Check health status after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkHealth();
+            setInterval(checkHealth, 30000); // Check every 30 seconds
+        });
+    </script>
+</body>
+</html>
