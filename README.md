@@ -3,4 +3,3 @@ Implementing an explainable fraud detection framework based on IEEE-CIS dataset 
 
 ### Data and models are not included in the repository
 Due to the large size of the files, `data/*.csv` and `train/models/*.pkl` files are not uploaded to GitHub.
-Please download the corresponding files to the project directory before running locally.
