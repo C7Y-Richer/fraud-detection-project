@@ -212,4 +212,5 @@ data/*.csv
 train/models/*.pkl
 *.ipynb_checkpoints/
 
-fraud_api/models/base_rf.pkl
+fraud_api/models/*.pkl
+
